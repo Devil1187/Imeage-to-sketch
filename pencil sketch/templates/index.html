@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo to Pencil Sketch Converter ✏️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #3f51b5;
+            --background-color: #f4f7f6;
+            --text-color: #333;
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 90%;
+            margin-top: 50px;
+            padding: 30px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        /* --- Custom File Input & Button Styling --- */
+        .file-input-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        /* Visually hide the original file input */
+        input[type="file"] {
+            display: none;
+        }
+
+        .custom-file-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #f0f0f0;
+            border: 2px dashed #ccc;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .custom-file-label:hover {
+            background-color: #e0e0e0;
+            border-color: var(--primary-color);
+        }
+
+        /* The main "Generate Sketch" button */
+        .submit-button {
+            padding: 12px 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s;
+        }
+
+        .submit-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4);
+        }
+
+        .submit-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* --- Result Display --- */
+        .result-box {
+            margin-top: 40px;
+            padding: 25px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+        }
+        
+        .result-box img { 
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain; /* Ensure the sketch fits well */
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .download-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 25px;
+            background-color: var(--secondary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+
+        .download-button:hover {
+            background-color: #30419c;
+        }
+
+        /* --- Preloader (Animation) --- */
+        .loader-container {
+            display: none; /* Hidden by default */
+            margin-top: 30px;
+            padding: 20px;
+        }
+
+        .pencil-loader {
+            width: 50px;
+            height: 10px;
+            background: repeating-linear-gradient(90deg, #795548 0 5px, #FFEB3B 5px 10px, #E91E63 10px 15px, #795548 15px 20px);
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px auto;
+        }
+
+        .pencil-loader::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            animation: draw-pencil 2s infinite ease-in-out;
+        }
+
+        @keyframes draw-pencil {
+            0% { left: -100%; }
+            50% { left: 100%; }
+            100% { left: -100%; }
+        }
+        
+        /* --- JS Functionality Styling --- */
+        .selected-file-name {
+            font-style: italic;
+            color: var(--secondary-color);
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Photo to Pencil Sketch Converter By Hari ✍️</h1>
+        
+        <form id="sketchForm" method="POST" enctype="multipart/form-data">
+            <div class="file-input-wrapper">
+                
+                <input type="file" name="file" id="file-upload" accept="image/png, image/jpeg" required>
+                
+                <label for="file-upload" class="custom-file-label">
+                    🖼️ Click to Select Photo
+                </label>
+                
+                <span id="file-name-display" class="selected-file-name">No file chosen.</span>
+
+                <button type="submit" id="submitBtn" class="submit-button">
+                    <span id="btnText">Generate Sketch</span>
+                </button>
+            </div>
+        </form>
+        
+        <div id="loader" class="loader-container">
+            <h3>Processing image...</h3>
+            <div class="pencil-loader"></div>
+            <p>Creating your masterpiece, please wait!</p>
+        </div>
+
+        {% if error %}
+            <p style="color: red;">Error: {{ error }}</p>
+        {% endif %}
+
+        {% if sketch_url %}
+            <div class="result-box">
+                <h2>Generated Sketch</h2>
+                <img src="{{ sketch_url }}" alt="Pencil Sketch">
+                <a href="{{ sketch_url }}" download class="download-button">Download Sketch 📥</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-upload');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const loader = document.getElementById('loader');
+        const form = document.getElementById('sketchForm');
+
+        // 1. Update file name on selection
+        fileInput.addEventListener('change', (event) => {
+            if (event.target.files.length > 0) {
+                fileNameDisplay.textContent = 'Selected: ' + event.target.files[0].name;
+                submitBtn.disabled = false;
+            } else {
+                fileNameDisplay.textContent = 'No file chosen.';
+                submitBtn.disabled = true;
+            }
+        });
+
+        // 2. Show loading animation on form submission
+        form.addEventListener('submit', () => {
+            // Hide the form elements and show the loader
+            submitBtn.style.display = 'none';
+            document.querySelector('.custom-file-label').style.display = 'none';
+            fileNameDisplay.style.display = 'none';
+
+            loader.style.display = 'block';
+        });
+
+        // 3. Disable button on page load if no sketch URL is present
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!{% if sketch_url %}true{% else %}false{% endif %}) {
+                submitBtn.disabled = true;
+            }
+            // Check if there was an error or sketch_url, if so, keep the button enabled
+            if ({% if error or sketch_url %}true{% else %}false{% endif %}) {
+                 document.querySelector('.custom-file-label').style.display = 'block';
+                 submitBtn.style.display = 'block';
+                 submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
